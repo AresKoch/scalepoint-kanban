@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ScalePoint Kanban</title>
+<style>
+  :root {
+    --bg:#141008;--bg2:#1a1510;--bg3:#211c14;--bg4:#1e1810;
+    --border:#2a2318;--border2:#2e2820;--border3:#3a3020;
+    --text:#f0e9dc;--text2:#e8e0d0;--muted:#7a6e5f;--muted2:#3e3628;--cnt:#2a2318;
+  }
+  body.light {
+    --bg:#f0e9dc;--bg2:#e6ddd0;--bg3:#faf6f0;--bg4:#ede5d8;
+    --border:#c8bfb0;--border2:#d0c8bc;--border3:#b8b0a0;
+    --text:#141008;--text2:#2a2010;--muted:#7a6858;--muted2:#b0a898;--cnt:#d8d0c4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; transition: background 0.2s, color 0.2s; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+  .logo { font-size: 20.7px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  .logo span { color: #c95540; }
+  .subtitle { font-size: 12.65px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+  .theme-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .theme-label { font-size: 12.65px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .toggle-track { width: 36px; height: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; position: relative; transition: background 0.2s; }
+  .toggle-thumb { width: 14px; height: 14px; background: var(--muted); border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s, background 0.2s; }
+  body.light .toggle-thumb { transform: translateX(16px); background: #4a90b8; }
+  .board-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .board-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .board-tab { background: var(--bg2); border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 20px; font-size: 13.8px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em; }
+  .board-tab:hover { border-color: #4a90b8; color: var(--text); }
+  .board-tab.active { background: #4a90b8; border-color: #4a90b8; color: #fff; }
+  .board-tab.drop-target { border-color: #4a90b8; color: var(--text); background: rgba(74,144,184,0.15); }
+  .board-tab.drop-target.priority-tab { border-color: #d4a030; background: rgba(212,160,48,0.1); }
+  .board-tab.priority-tab { border-color: rgba(212,160,48,0.3); color: #d4a030; }
+  .board-tab.priority-tab.active { background: rgba(212,160,48,0.15); border-color: #d4a030; color: #d4a030; }
+  .new-board-form { display: flex; gap: 6px; align-items: center; }
+  .new-board-form input { background: var(--bg4); border: 1px solid var(--border3); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 13.8px; width: 130px; outline: none; }
+  .new-board-form input:focus { border-color: #4a90b8; }
+  .btn-sm { background: var(--cnt); color: var(--text); border: 1px solid var(--border3); padding: 6px 12px; border-radius: 6px; font-size: 13.8px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-sm:hover { background: var(--border3); }
+  .btn-danger { background: rgba(201,85,64,0.15); border-color: rgba(201,85,64,0.4); color: #c95540; }
+  .btn-danger:hover { background: rgba(201,85,64,0.25); }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .controls input { background: var(--bg4); border: 1px solid var(--border3); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 13.8px; width: 220px; outline: none; }
+  .controls input:focus { border-color: #4a90b8; }
+  .controls select { background: var(--bg4); border: 1px solid var(--border3); color: var(--text); padding: 6px 8px; border-radius: 6px; font-size: 13.8px; outline: none; cursor: pointer; }
+  .btn-add { background: #4a90b8; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13.8px; font-weight: 600; cursor: pointer; }
+  .btn-add:hover { background: #5aa0c8; }
+  .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: start; }
+  .column { background: var(--bg2); border-radius: 10px; padding: 12px; min-height: 200px; border: 2px solid var(--border); transition: border-color 0.15s, background 0.15s; }
+  .column.drag-over { border-color: #4a90b8; background: var(--bg4); }
+  .col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .col-title { font-size: 12.65px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .col-count { background: var(--cnt); color: var(--muted); font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+  .backlog .col-title { color: var(--muted); }
+  .inprogress .col-title { color: #4a90b8; }
+  .waiting .col-title { color: #d4a030; }
+  .done .col-title { color: #4fa876; }
+  .card { background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 10px 8px; margin-bottom: 8px; cursor: grab; transition: transform 0.1s, border-color 0.15s; position: relative; }
+  .card:hover { border-color: var(--border3); transform: translateY(-1px); }
+  .card.dragging { opacity: 0.4; }
+  .card-text { font-size: 14.37px; line-height: 1.45; color: var(--text2); padding-right: 20px; }
+  .card-footer { display: flex; align-items: center; margin-top: 7px; }
+  .tag { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 20px; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; }
+  .tag:hover { opacity: 0.75; }
+  .tag-dropdown { position: absolute; bottom: 32px; left: 10px; background: var(--bg2); border: 1px solid #4a90b8; border-radius: 8px; padding: 4px; z-index: 100; display: flex; flex-direction: column; gap: 2px; min-width: 100px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .tag-dropdown-item { font-size: 12.65px; font-weight: 700; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: background 0.1s; }
+  .tag-dropdown-item:hover { background: var(--border3); }
+  .tag-manager { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; padding: 10px 12px; background: var(--bg2); border-radius: 8px; border: 1px solid var(--border); }
+  .tag-manager-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #4a6a5a; white-space: nowrap; }
+  .tag-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; padding: 3px 8px 3px 9px; border-radius: 20px; text-transform: uppercase; }
+  .tag-pill-del { background: none; border: none; cursor: pointer; font-size: 14.95px; line-height: 1; padding: 0; opacity: 0.5; transition: opacity 0.15s; color: inherit; }
+  .tag-pill-del:hover { opacity: 1; }
+  .tag-add-form { display: flex; gap: 6px; align-items: center; margin-left: 4px; }
+  .tag-add-form input { background: var(--bg3); border: 1px solid var(--border3); color: var(--text); padding: 3px 8px; border-radius: 6px; font-size: 12.65px; width: 90px; outline: none; }
+  .tag-add-form input:focus { border-color: #4a90b8; }
+  .btn-tag-add { background: var(--cnt); color: var(--muted); border: 1px solid var(--border3); padding: 3px 10px; border-radius: 6px; font-size: 12.65px; font-weight: 600; cursor: pointer; }
+  .btn-tag-add:hover { color: var(--text); }
+  .card.drag-above { border-top: 2px solid #4a90b8 !important; }
+  .card.drag-below { border-bottom: 2px solid #4a90b8 !important; }
+  .star-btn { position: absolute; top: 7px; right: 28px; background: none; border: none; cursor: pointer; font-size: 16.1px; line-height: 1; padding: 0 2px; color: var(--muted2); transition: color 0.15s; }
+  .star-btn:hover { color: #d4a030; }
+  .star-btn.starred { color: #d4a030; }
+  .priority-board { display: flex; flex-direction: column; gap: 8px; max-width: 700px; }
+  .priority-empty { color: var(--muted2); font-size: 14.95px; padding: 40px 0; text-align: center; font-style: italic; }
+  .priority-card { background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px 8px; position: relative; }
+  .priority-card:hover { border-color: var(--border3); }
+  .priority-card-text { font-size: 14.37px; line-height: 1.45; color: var(--text2); padding-right: 24px; }
+  .priority-card-footer { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
+  .source-badge { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 20px; background: var(--cnt); color: var(--muted); text-transform: uppercase; }
+  .col-badge { font-size: 11.5px; color: var(--muted); font-style: italic; }
+  .delete-btn { position: absolute; top: 7px; right: 7px; background: none; border: none; color: var(--muted2); cursor: pointer; font-size: 18.4px; line-height: 1; padding: 0 2px; transition: color 0.15s; }
+  .delete-btn:hover { color: #c95540; }
+  .empty-col { color: var(--muted2); font-size: 13.8px; text-align: center; padding: 20px 0; font-style: italic; }
+  .status-bar { margin-top: 14px; font-size: 11.5px; color: var(--muted2); text-align: right; letter-spacing: 0.05em; }
+  @media (max-width: 800px) { .board { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">Scale<span>Point</span> Systems</div>
+    <div class="subtitle">Project Board</div>
+  </div>
+  <div class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+    <span class="theme-label" id="themeLabel">Dark</span>
+    <div class="toggle-track"><div class="toggle-thumb"></div></div>
+  </div>
+</div>
+
+<div class="board-bar">
+  <div class="board-tabs" id="boardTabs"></div>
+  <div class="new-board-form">
+    <input type="text" id="newBoardName" placeholder="New board..." maxlength="24" />
+    <button class="btn-sm" onclick="createBoard()">+ Board</button>
+    <button class="btn-sm btn-danger" id="deleteBoardBtn" onclick="deleteCurrentBoard()">Delete Board</button>
+  </div>
+</div>
+
+<div class="tag-manager" id="tagManager"></div>
+
+<div class="controls">
+  <input type="text" id="newCardText" placeholder="New task..." maxlength="120" />
+  <select id="newCardTag">
+    <option value="ipm">IPM</option>
+    <option value="frmp">FRMP</option>
+    <option value="sales">Sales</option>
+    <option value="infra">Infra</option>
+    <option value="admin">Admin</option>
+    <option value="guardian">Guardian</option>
+  </select>
+  <select id="newCardCol">
+    <option value="backlog">Backlog</option>
+    <option value="inprogress">In Progress</option>
+    <option value="waiting">Waiting</option>
+    <option value="done">Done</option>
+  </select>
+  <button class="btn-add" onclick="addCard()">+ Add</button>
+</div>
+
+<div class="board" id="board"></div>
+<div class="status-bar" id="statusBar">Loading...</div>
+
+<script>
+const META_KEY  = 'scalepoint-kanban-meta';
+const BOARD_KEY = id => 'scalepoint-board-' + id;
+
+const COLS = [
+  { id: 'backlog',    label: 'Backlog'            },
+  { id: 'inprogress', label: 'In Progress'        },
+  { id: 'waiting',    label: 'Waiting On Someone' },
+  { id: 'done',       label: 'Done'               },
+];
+
+const DEFAULT_BOARDS = {
+  order: ['general', 'ipm', 'frmp', 'guardian'],
+  names: { general: 'General', ipm: 'IPM', frmp: 'FRMP', guardian: 'Guardian' },
+  active: 'general',
+  tags: ['ipm','frmp','sales','infra','admin','guardian'],
+};
+
+const DEFAULT_CARDS = {
+  general: {
+    backlog: [
+      { id: uid(), text: 'Formalize Amy-Beth partnership agreement', tag: 'admin' },
+      { id: uid(), text: 'Set up business banking', tag: 'admin' },
+      { id: uid(), text: 'Build museum target list for cold outreach', tag: 'sales' },
+      { id: uid(), text: 'Cold outreach — Sally Kurtz, Dayton Art Institute', tag: 'sales' },
+      { id: uid(), text: 'Follow up Carillon Historical Park voicemail', tag: 'sales' },
+    ],
+    inprogress: [],
+    waiting: [
+      { id: uid(), text: 'ClearWater Sensors — Rod and Reel RFQ', tag: 'sales' },
+      { id: uid(), text: 'Carillon Historical Park — callback', tag: 'sales' },
+    ],
+    done: [
+      { id: uid(), text: 'ScalePoint Systems LLC registered + EIN obtained', tag: 'admin' },
+      { id: uid(), text: 'scalepointsystems.com launched', tag: 'admin' },
+      { id: uid(), text: 'miamivalleyair.com launched', tag: 'admin' },
+    ],
+  },
+  ipm: {
+    backlog: [
+      { id: uid(), text: 'Write MQTT firmware for IPM nodes', tag: 'ipm' },
+    ],
+    inprogress: [
+      { id: uid(), text: 'Build 4 IPM sensor nodes', tag: 'ipm' },
+      { id: uid(), text: 'Finalize and send contract to Jon + Alice', tag: 'ipm' },
+    ],
+    waiting: [
+      { id: uid(), text: 'Jon — backup battery add-on decision', tag: 'ipm' },
+    ],
+    done: [
+      { id: uid(), text: 'IPM proposal delivered', tag: 'ipm' },
+      { id: uid(), text: 'Meeting with Jon and Alice — scope finalized', tag: 'ipm' },
+    ],
+  },
+  frmp: {
+    backlog: [
+      { id: uid(), text: 'FRMP expansion — 9 remaining park locations', tag: 'frmp' },
+      { id: uid(), text: 'Solar node redesign for outdoor deployments', tag: 'infra' },
+      { id: uid(), text: 'Air quality node enclosure redesign', tag: 'infra' },
+      { id: uid(), text: 'Set up DigitalOcean VPS', tag: 'infra' },
+      { id: uid(), text: 'Install Mosquitto, InfluxDB, Telegraf, Grafana', tag: 'infra' },
+      { id: uid(), text: 'Agentic weekly report pipeline', tag: 'infra' },
+    ],
+    inprogress: [],
+    waiting: [
+      { id: uid(), text: 'FRMP — Digital Service Manager role opening', tag: 'frmp' },
+    ],
+    done: [
+      { id: uid(), text: 'Riverscape live node deployed', tag: 'frmp' },
+      { id: uid(), text: 'miamivalleyair.com launched', tag: 'frmp' },
+    ],
+  },
+  guardian: {
+    backlog: [
+      { id: uid(), text: 'ScalePoint Guardian landing page', tag: 'guardian' },
+      { id: uid(), text: 'Contact Miami Valley Human Trafficking Task Force', tag: 'guardian' },
+    ],
+    inprogress: [],
+    waiting: [],
+    done: [
+      { id: uid(), text: 'Guardian page mockup built', tag: 'guardian' },
+    ],
+  },
+};
+
+// Storage abstraction — uses window.storage (Claude) or localStorage fallback
+const store = {
+  async get(key) {
+    if (window.storage) {
+      try { return await store.get(key); } catch(e) { return null; }
+    } else {
+      const val = localStorage.getItem(key);
+      return val ? { value: val } : null;
+    }
+  },
+  async set(key, value) {
+    if (window.storage) {
+      try { return await store.set(key, value); } catch(e) { return null; }
+    } else {
+      localStorage.setItem(key, value); return true;
+    }
+  },
+  async delete(key) {
+    if (window.storage) {
+      try { return await store.delete(key); } catch(e) { return null; }
+    } else {
+      localStorage.removeItem(key); return true;
+    }
+  }
+};
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('themeLabel').textContent = isLight ? 'Light' : 'Dark';
+  store.set('sp-theme', isLight ? 'light' : 'dark');
+}
+
+async function applyTheme() {
+  const saved = await store.get('sp-theme');
+  if (saved && saved.value === 'light') {
+    document.body.classList.add('light');
+    document.getElementById('themeLabel').textContent = 'Light';
+  }
+}
+
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+let meta = null;
+let currentCards = null;
+
+async function loadMeta() {
+  try {
+    const r = await store.get(META_KEY);
+    meta = r ? JSON.parse(r.value) : { ...DEFAULT_BOARDS };
+  } catch(e) {
+    meta = { ...DEFAULT_BOARDS };
+  }
+}
+
+async function saveMeta() {
+  try { await store.set(META_KEY, JSON.stringify(meta)); } catch(e) {}
+}
+
+async function loadBoard(id) {
+  try {
+    const r = await store.get(BOARD_KEY(id));
+    currentCards = r ? JSON.parse(r.value) : (DEFAULT_CARDS[id] || { backlog: [], inprogress: [], waiting: [], done: [] });
+  } catch(e) {
+    currentCards = DEFAULT_CARDS[id] || { backlog: [], inprogress: [], waiting: [], done: [] };
+  }
+}
+
+async function saveCurrentBoard() {
+  try {
+    await store.set(BOARD_KEY(meta.active), JSON.stringify(currentCards));
+    setStatus('Saved ' + new Date().toLocaleTimeString());
+  } catch(e) { setStatus('Save failed'); }
+}
+
+function setStatus(msg) { document.getElementById('statusBar').textContent = msg; }
+
+async function switchBoard(id) {
+  meta.active = id;
+  await saveMeta();
+  if (id !== '__priority__') await loadBoard(id);
+  renderTabs();
+  if (id === '__priority__') renderPriority();
+  else render();
+  setStatus('Switched to ' + (id === '__priority__' ? 'Priority' : meta.names[id]));
+}
+
+async function createBoard() {
+  const name = document.getElementById('newBoardName').value.trim();
+  if (!name) return;
+  const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + uid().slice(0,4);
+  meta.order.push(id);
+  meta.names[id] = name;
+  document.getElementById('newBoardName').value = '';
+  await saveMeta();
+  await switchBoard(id);
+}
+
+let deleteArmed = false;
+let deleteTimer = null;
+
+async function deleteCurrentBoard() {
+  if (meta.active === '__priority__') { setStatus("Priority board can't be deleted"); return; }
+  if (meta.order.length <= 1) { setStatus("Can't delete the last board"); return; }
+  const btn = document.getElementById('deleteBoardBtn');
+  if (!deleteArmed) {
+    deleteArmed = true;
+    btn.textContent = 'Sure? Click again';
+    btn.style.background = '#5a1e14';
+    btn.style.borderColor = '#c95540';
+    btn.style.color = '#ff8070';
+    deleteTimer = setTimeout(() => {
+      deleteArmed = false;
+      btn.textContent = 'Delete Board';
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 3000);
+    return;
+  }
+  clearTimeout(deleteTimer);
+  deleteArmed = false;
+  btn.textContent = 'Delete Board';
+  btn.style.background = '';
+  btn.style.borderColor = '';
+  btn.style.color = '';
+  try { await store.delete(BOARD_KEY(meta.active)); } catch(e) {}
+  meta.order = meta.order.filter(id => id !== meta.active);
+  delete meta.names[meta.active];
+  meta.active = meta.order[0];
+  await saveMeta();
+  await loadBoard(meta.active);
+  renderTabs();
+  render();
+  setStatus('Board deleted');
+}
+
+const TAG_COLORS = [
+  { bg: 'rgba(123,101,176,0.15)', color: '#a08fd0', border: 'rgba(123,101,176,0.3)' },
+  { bg: 'rgba(79,168,118,0.15)',  color: '#6dc896', border: 'rgba(79,168,118,0.3)'  },
+  { bg: 'rgba(212,160,48,0.15)',  color: '#e0b850', border: 'rgba(212,160,48,0.3)'  },
+  { bg: 'rgba(74,144,184,0.15)',  color: '#6aaed8', border: 'rgba(74,144,184,0.3)'  },
+  { bg: 'rgba(201,85,64,0.15)',   color: '#e07560', border: 'rgba(201,85,64,0.3)'   },
+  { bg: 'rgba(78,205,196,0.15)',  color: '#6ee8e4', border: 'rgba(78,205,196,0.3)'  },
+  { bg: 'rgba(220,120,180,0.15)', color: '#e080c0', border: 'rgba(220,120,180,0.3)' },
+  { bg: 'rgba(180,200,80,0.15)',  color: '#c0d860', border: 'rgba(180,200,80,0.3)'  },
+];
+
+function getTagStyle(tag) {
+  const tags = meta.tags || [];
+  const idx = tags.indexOf(tag);
+  const c = TAG_COLORS[idx % TAG_COLORS.length] || TAG_COLORS[0];
+  return `background:${c.bg};color:${c.color};border:1px solid ${c.border};`;
+}
+
+function renderTagManager() {
+  const el = document.getElementById('tagManager');
+  const tags = meta.tags || [];
+  let html = `<span class="tag-manager-label">Tags</span>`;
+  tags.forEach(tag => {
+    const c = TAG_COLORS[tags.indexOf(tag) % TAG_COLORS.length];
+    html += `<span class="tag-pill" style="background:${c.bg};color:${c.color};border:1px solid ${c.border}">
+      ${tag}<button class="tag-pill-del" onclick="deleteTag('${tag}')" title="Remove tag">×</button>
+    </span>`;
+  });
+  html += `<div class="tag-add-form">
+    <input type="text" id="newTagInput" placeholder="New tag..." maxlength="16" />
+    <button class="btn-tag-add" onclick="addTag()">+ Tag</button>
+  </div>`;
+  el.innerHTML = html;
+  document.getElementById('newTagInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTag(); });
+  renderTagSelect();
+}
+
+function renderTagSelect() {
+  const sel = document.getElementById('newCardTag');
+  const tags = meta.tags || [];
+  sel.innerHTML = tags.map(t => `<option value="${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('');
+}
+
+async function addTag() {
+  const input = document.getElementById('newTagInput');
+  const val = input.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!val || meta.tags.includes(val)) { input.value = ''; return; }
+  meta.tags.push(val);
+  input.value = '';
+  await saveMeta();
+  renderTagManager();
+  setStatus('Tag added: ' + val);
+}
+
+async function deleteTag(tag) {
+  meta.tags = (meta.tags || []).filter(t => t !== tag);
+  await saveMeta();
+  renderTagManager();
+  setStatus('Tag removed: ' + tag);
+}
+
+async function moveCardToBoard(targetBoardId) {
+  if (!dragCard || targetBoardId === meta.active || targetBoardId === '__priority__') return;
+  // Remove from current board
+  currentCards[dragFromCol] = currentCards[dragFromCol].filter(c => c.id !== dragCard.id);
+  await saveCurrentBoard();
+  // Load target board, add card to backlog, save
+  let targetCards;
+  try {
+    const r = await store.get(BOARD_KEY(targetBoardId));
+    targetCards = r ? JSON.parse(r.value) : (DEFAULT_CARDS[targetBoardId] || { backlog:[], inprogress:[], waiting:[], done:[] });
+  } catch(e) {
+    targetCards = { backlog:[], inprogress:[], waiting:[], done:[] };
+  }
+  targetCards.backlog = [dragCard, ...(targetCards.backlog || [])];
+  await store.set(BOARD_KEY(targetBoardId), JSON.stringify(targetCards));
+  const name = meta.names[targetBoardId];
+  starredCache = null;
+  dragCard = null; dragFromCol = null;
+  render();
+  setStatus(`Moved to ${name} › Backlog`);
+}
+
+function renderTabs() {
+  const container = document.getElementById('boardTabs');
+  container.innerHTML = '';
+
+  const makeTab = (id, label, extraClass) => {
+    const tab = document.createElement('button');
+    tab.className = `board-tab ${extraClass || ''}${meta.active === id ? ' active' : ''}`;
+    tab.textContent = label;
+    tab.dataset.boardId = id;
+    tab.onclick = () => switchBoard(id);
+    tab.addEventListener('dragover', e => { e.preventDefault(); if (id !== meta.active && id !== '__priority__') tab.classList.add('drop-target'); });
+    tab.addEventListener('dragleave', () => tab.classList.remove('drop-target'));
+    tab.addEventListener('drop', e => { e.preventDefault(); tab.classList.remove('drop-target'); moveCardToBoard(id); });
+    return tab;
+  };
+
+  container.appendChild(makeTab('__priority__', '★ Priority', 'priority-tab'));
+  meta.order.forEach(id => container.appendChild(makeTab(id, meta.names[id], '')));
+
+  const isPriority = meta.active === '__priority__';
+  document.getElementById('deleteBoardBtn').style.display = isPriority ? 'none' : '';
+  document.querySelector('.controls').style.display = isPriority ? 'none' : '';
+  document.getElementById('tagManager').style.display = isPriority ? 'none' : '';
+}
+
+let dragCard = null;
+let dragFromCol = null;
+let dragOverCardId = null;
+let dragOverPos = null;
+
+function clearIndicators() {
+  document.querySelectorAll('.drag-above,.drag-below').forEach(el => el.classList.remove('drag-above','drag-below'));
+}
+
+let starredCache = null;
+
+async function toggleStar(boardId, colId, cardId) {
+  let cards;
+  if (boardId === meta.active) {
+    cards = currentCards;
+  } else {
+    try {
+      const r = await store.get(BOARD_KEY(boardId));
+      cards = r ? JSON.parse(r.value) : (DEFAULT_CARDS[boardId] || {});
+    } catch(e) { cards = {}; }
+  }
+  const col = cards[colId] || [];
+  const card = col.find(c => c.id === cardId);
+  if (card) card.starred = !card.starred;
+  try { await store.set(BOARD_KEY(boardId), JSON.stringify(cards)); } catch(e) {}
+  if (boardId === meta.active) currentCards = cards;
+  starredCache = null; // invalidate cache
+  if (meta.active === '__priority__') renderPriority();
+  else render();
+  saveCurrentBoard();
+  setStatus(card && card.starred ? '★ Starred' : '☆ Unstarred');
+}
+
+async function getAllStarred() {
+  if (starredCache) return starredCache;
+  const results = [];
+  for (const boardId of meta.order) {
+    let cards;
+    if (boardId === meta.active) {
+      cards = currentCards;
+    } else {
+      try {
+        const r = await store.get(BOARD_KEY(boardId));
+        cards = r ? JSON.parse(r.value) : (DEFAULT_CARDS[boardId] || {});
+      } catch(e) { cards = {}; }
+    }
+    for (const col of COLS) {
+      (cards[col.id] || []).filter(c => c.starred).forEach(c => {
+        results.push({ card: c, boardId, boardName: meta.names[boardId], colLabel: col.label });
+      });
+    }
+  }
+  starredCache = results;
+  return results;
+}
+
+async function renderPriority() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  const starred = await getAllStarred();
+
+  if (starred.length === 0) {
+    boardEl.innerHTML = '<div class="priority-empty">No starred tasks yet. Click ☆ on any card to pin it here.</div>';
+    return;
+  }
+
+  const container = document.createElement('div');
+  container.className = 'priority-board';
+
+  starred.forEach(({ card, boardId, boardName, colLabel }) => {
+    const cardEl = document.createElement('div');
+    cardEl.className = 'priority-card';
+    cardEl.innerHTML = `
+      <button class="star-btn starred" title="Remove from priority" onclick="toggleStar('${boardId}','${COLS.find(c=>c.label===colLabel)?.id||'backlog'}','${card.id}')">★</button>
+      <div class="priority-card-text">${card.text}</div>
+      <div class="priority-card-footer">
+        <span class="tag" style="${getTagStyle(card.tag)}">${card.tag}</span>
+        <span class="source-badge">${boardName}</span>
+        <span class="col-badge">${colLabel}</span>
+      </div>
+    `;
+    container.appendChild(cardEl);
+  });
+
+  boardEl.appendChild(container);
+}
+
+function render() {
+  if (meta.active === '__priority__') { renderPriority(); return; }
+
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  COLS.forEach(col => {
+    const cards = currentCards[col.id] || [];
+    const colEl = document.createElement('div');
+    colEl.className = 'column ' + col.id;
+    colEl.dataset.col = col.id;
+
+    colEl.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (e.target === colEl || e.target.classList.contains('empty-col')) {
+        clearIndicators(); colEl.classList.add('drag-over'); dragOverCardId = null;
+      }
+    });
+    colEl.addEventListener('dragleave', e => {
+      if (!colEl.contains(e.relatedTarget)) { colEl.classList.remove('drag-over'); clearIndicators(); }
+    });
+    colEl.addEventListener('drop', e => {
+      e.preventDefault();
+      colEl.classList.remove('drag-over'); clearIndicators();
+      if (!dragCard) return;
+      currentCards[dragFromCol] = currentCards[dragFromCol].filter(c => c.id !== dragCard.id);
+      const target = currentCards[col.id] || [];
+      if (dragOverCardId) {
+        const idx = target.findIndex(c => c.id === dragOverCardId);
+        target.splice(idx === -1 ? target.length : dragOverPos === 'above' ? idx : idx + 1, 0, dragCard);
+      } else { target.push(dragCard); }
+      currentCards[col.id] = target;
+      dragCard = null; dragFromCol = null; dragOverCardId = null; dragOverPos = null;
+      render(); saveCurrentBoard();
+    });
+
+    const header = document.createElement('div');
+    header.className = 'col-header';
+    header.innerHTML = `<span class="col-title">${col.label}</span><span class="col-count">${cards.length}</span>`;
+    colEl.appendChild(header);
+
+    if (cards.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-col'; empty.textContent = 'Drop cards here';
+      colEl.appendChild(empty);
+    } else {
+      cards.forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card'; cardEl.draggable = true; cardEl.dataset.id = card.id;
+        cardEl.innerHTML = `
+          <button class="star-btn ${card.starred ? 'starred' : ''}" title="${card.starred ? 'Remove from priority' : 'Add to priority'}">${card.starred ? '★' : '☆'}</button>
+          <button class="delete-btn" title="Delete">×</button>
+          <div class="card-text" title="Double-click to edit" style="padding-right:44px">${card.text}</div>
+          <div class="card-footer"><span class="tag" style="${getTagStyle(card.tag)}">${card.tag}</span></div>
+        `;
+
+        cardEl.querySelector('.star-btn').addEventListener('click', () => toggleStar(meta.active, col.id, card.id));
+
+        cardEl.querySelector('.card-text').addEventListener('dblclick', function() {
+          const input = document.createElement('input');
+          input.type = 'text'; input.value = card.text;
+          input.style.cssText = 'width:100%;background:#2e2820;border:1px solid #4a90b8;color:#f0e9dc;padding:3px 6px;border-radius:4px;font-size: 14.37px;outline:none;box-sizing:border-box;margin-bottom:2px;';
+          this.replaceWith(input); input.focus(); input.select();
+          const save = () => {
+            const val = input.value.trim(); if (val) card.text = val;
+            const d = document.createElement('div'); d.className = 'card-text'; d.title = 'Double-click to edit'; d.style.paddingRight = '44px'; d.textContent = card.text;
+            input.replaceWith(d); d.addEventListener('dblclick', arguments.callee); saveCurrentBoard();
+          };
+          input.addEventListener('blur', save);
+          input.addEventListener('keydown', e => { if (e.key==='Enter'){e.preventDefault();input.blur();} if(e.key==='Escape'){input.value=card.text;input.blur();} });
+        });
+
+        cardEl.addEventListener('dragstart', () => { dragCard = card; dragFromCol = col.id; setTimeout(() => cardEl.classList.add('dragging'), 0); });
+        cardEl.addEventListener('dragend', () => { cardEl.classList.remove('dragging'); clearIndicators(); document.querySelectorAll('.column').forEach(c=>c.classList.remove('drag-over')); });
+
+        cardEl.addEventListener('dragover', e => {
+          e.preventDefault(); e.stopPropagation();
+          if (dragCard && dragCard.id === card.id) return;
+          colEl.classList.remove('drag-over');
+          const rect = cardEl.getBoundingClientRect();
+          const pos = e.clientY < rect.top + rect.height / 2 ? 'above' : 'below';
+          dragOverCardId = card.id; dragOverPos = pos;
+          clearIndicators();
+          cardEl.classList.add(pos === 'above' ? 'drag-above' : 'drag-below');
+        });
+
+        cardEl.addEventListener('drop', e => {
+          e.preventDefault(); e.stopPropagation();
+          colEl.classList.remove('drag-over'); clearIndicators();
+          if (!dragCard || dragCard.id === card.id) return;
+          currentCards[dragFromCol] = currentCards[dragFromCol].filter(c => c.id !== dragCard.id);
+          const target = currentCards[col.id] || [];
+          const idx = target.findIndex(c => c.id === card.id);
+          target.splice(dragOverPos === 'above' ? idx : idx + 1, 0, dragCard);
+          currentCards[col.id] = target;
+          dragCard = null; dragFromCol = null; dragOverCardId = null; dragOverPos = null;
+          render(); saveCurrentBoard();
+        });
+
+        const footer = cardEl.querySelector('.card-footer');
+        const tagEl = footer.querySelector('.tag');
+        tagEl.addEventListener('click', e => {
+          e.stopPropagation();
+          // Remove any existing dropdowns
+          document.querySelectorAll('.tag-dropdown').forEach(d => d.remove());
+          const dropdown = document.createElement('div');
+          dropdown.className = 'tag-dropdown';
+          (meta.tags || []).forEach(t => {
+            if (t === card.tag) return;
+            const item = document.createElement('div');
+            item.className = 'tag-dropdown-item';
+            item.textContent = t;
+            const c = TAG_COLORS[(meta.tags||[]).indexOf(t) % TAG_COLORS.length];
+            item.style.color = c.color;
+            item.addEventListener('click', e => {
+              e.stopPropagation();
+              card.tag = t;
+              dropdown.remove();
+              render(); saveCurrentBoard();
+            });
+            dropdown.appendChild(item);
+          });
+          cardEl.style.position = 'relative';
+          cardEl.appendChild(dropdown);
+          const close = e => { if (!dropdown.contains(e.target)) { dropdown.remove(); document.removeEventListener('click', close); } };
+          setTimeout(() => document.addEventListener('click', close), 0);
+        });
+
+        cardEl.querySelector('.delete-btn').addEventListener('click', () => { currentCards[col.id] = currentCards[col.id].filter(c => c.id !== card.id); render(); saveCurrentBoard(); });
+        colEl.appendChild(cardEl);
+      });
+    }
+    boardEl.appendChild(colEl);
+  });
+}
+
+function addCard() {
+  const text = document.getElementById('newCardText').value.trim();
+  const tag  = document.getElementById('newCardTag').value;
+  const col  = document.getElementById('newCardCol').value;
+  if (!text) return;
+  currentCards[col] = [{ id: uid(), text, tag }, ...(currentCards[col] || [])];
+  document.getElementById('newCardText').value = '';
+  render(); saveCurrentBoard();
+}
+
+document.getElementById('newCardText').addEventListener('keydown', e => { if (e.key === 'Enter') addCard(); });
+document.getElementById('newBoardName').addEventListener('keydown', e => { if (e.key === 'Enter') createBoard(); });
+
+async function init() {
+  await applyTheme();
+  await loadMeta();
+  if (!meta.tags) meta.tags = ['ipm','frmp','sales','infra','admin','guardian'];
+  if (meta.active !== '__priority__') await loadBoard(meta.active);
+  renderTabs();
+  renderTagManager();
+  if (meta.active === '__priority__') renderPriority();
+  else render();
+  setStatus('Board loaded');
+}
+
+init();
+</script>
+</body>
+</html>
