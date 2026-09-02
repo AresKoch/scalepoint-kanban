@@ -48,7 +48,7 @@
   .controls select { background: var(--bg4); border: 1px solid var(--border3); color: var(--text); padding: 6px 8px; border-radius: 6px; font-size: 13.8px; outline: none; cursor: pointer; }
   .btn-add { background: #4a90b8; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13.8px; font-weight: 600; cursor: pointer; }
   .btn-add:hover { background: #5aa0c8; }
-  .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: start; }
+  .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: start; }
   .column { background: var(--bg2); border-radius: 10px; padding: 12px; min-height: 200px; border: 2px solid var(--border); transition: border-color 0.15s, background 0.15s; }
   .column.drag-over { border-color: #4a90b8; background: var(--bg4); }
   .column.wip-over { border-color: #c95540; }
@@ -59,8 +59,9 @@
   .col-count.editable-count:hover { opacity: 0.8; }
   .col-count.over-limit { background: rgba(201,85,64,0.25); color: #e07560; }
   .backlog .col-title { color: var(--muted); }
-  .inprogress .col-title { color: #4a90b8; }
-  .waiting .col-title { color: #d4a030; }
+  .research .col-title { color: #d4a030; }
+  .creation .col-title { color: #4a90b8; }
+  .review .col-title { color: #a08fd0; }
   .done .col-title { color: #4fa876; }
   .card { background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 10px 8px; margin-bottom: 8px; cursor: grab; transition: transform 0.1s, border-color 0.15s; position: relative; }
   .card:hover { border-color: var(--border3); transform: translateY(-1px); }
@@ -123,7 +124,8 @@
   .dow-policy-list { margin: 4px 0 0 18px; padding: 0; }
   .dow-policy-list li { margin-bottom: 2px; }
   .dow-note { color: var(--muted); font-style: italic; }
-  @media (max-width: 800px) { .board { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 1150px) { .board { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 700px) { .board { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
 <body>
@@ -167,8 +169,9 @@
   </select>
   <select id="newCardCol">
     <option value="backlog">Backlog</option>
-    <option value="inprogress">In Progress</option>
-    <option value="waiting">Waiting</option>
+    <option value="research">Research and Clarify</option>
+    <option value="creation">Creation</option>
+    <option value="review">Out for Review</option>
     <option value="done">Done</option>
   </select>
   <button class="btn-add" onclick="addCard()">+ Add</button>
@@ -186,16 +189,18 @@ const BOARD_KEY = id => 'scalepoint-board-' + id;
 // --- Definition of Workflow: states, WIP-controlled states, and defaults ---
 // Per the Kanban Guide, a work item is "started" the moment it enters a WIP
 // state and "finished" the moment it enters the finished state. Backlog is
-// "not yet started"; Done is "finished". In Progress and Waiting On Someone
-// are the two states where work-in-progress (WIP) is actively controlled.
+// "not yet started"; Done is "finished". Research and Clarify, Creation, and
+// Out for Review are the three states where work-in-progress (WIP) is
+// actively controlled.
 const COLS = [
-  { id: 'backlog',    label: 'Backlog'            },
-  { id: 'inprogress', label: 'In Progress'        },
-  { id: 'waiting',    label: 'Waiting On Someone' },
-  { id: 'done',       label: 'Done'               },
+  { id: 'backlog',  label: 'Backlog'              },
+  { id: 'research', label: 'Research and Clarify' },
+  { id: 'creation', label: 'Creation'              },
+  { id: 'review',   label: 'Out for Review'        },
+  { id: 'done',     label: 'Done'                  },
 ];
-const WIP_COLS = ['inprogress', 'waiting'];
-const DEFAULT_WIP_LIMITS = { inprogress: 3, waiting: 4 };
+const WIP_COLS = ['research', 'creation', 'review'];
+const DEFAULT_WIP_LIMITS = { research: 2, creation: 3, review: 3 };
 const DEFAULT_SLE_DAYS = 5;
 const DAY = 86400000;
 const now0 = Date.now();
@@ -206,10 +211,10 @@ const DEFAULT_BOARDS = {
   active: 'general',
   tags: ['ipm','frmp','sales','infra','admin','guardian'],
   wipLimits: {
-    general:  { inprogress: 3, waiting: 4 },
-    ipm:      { inprogress: 3, waiting: 3 },
-    frmp:     { inprogress: 3, waiting: 4 },
-    guardian: { inprogress: 2, waiting: 3 },
+    general:  { research: 2, creation: 3, review: 3 },
+    ipm:      { research: 2, creation: 3, review: 2 },
+    frmp:     { research: 2, creation: 3, review: 3 },
+    guardian: { research: 1, creation: 2, review: 2 },
   },
   sleOverride: {},
 };
@@ -223,8 +228,9 @@ const DEFAULT_CARDS = {
       { id: uid(), text: 'Cold outreach — Sally Kurtz, Dayton Art Institute', tag: 'sales' },
       { id: uid(), text: 'Follow up Carillon Historical Park voicemail', tag: 'sales' },
     ],
-    inprogress: [],
-    waiting: [
+    research: [],
+    creation: [],
+    review: [
       { id: uid(), text: 'ClearWater Sensors — Rod and Reel RFQ', tag: 'sales', startedAt: now0 - 6*DAY },
       { id: uid(), text: 'Carillon Historical Park — callback', tag: 'sales', startedAt: now0 - 3*DAY },
     ],
@@ -238,11 +244,12 @@ const DEFAULT_CARDS = {
     backlog: [
       { id: uid(), text: 'Write MQTT firmware for IPM nodes', tag: 'ipm' },
     ],
-    inprogress: [
+    research: [],
+    creation: [
       { id: uid(), text: 'Build 4 IPM sensor nodes', tag: 'ipm', startedAt: now0 - 4*DAY },
       { id: uid(), text: 'Finalize and send contract to Jon + Alice', tag: 'ipm', startedAt: now0 - 2*DAY },
     ],
-    waiting: [
+    review: [
       { id: uid(), text: 'Jon — backup battery add-on decision', tag: 'ipm', startedAt: now0 - 7*DAY },
     ],
     done: [
@@ -259,8 +266,9 @@ const DEFAULT_CARDS = {
       { id: uid(), text: 'Install Mosquitto, InfluxDB, Telegraf, Grafana', tag: 'infra' },
       { id: uid(), text: 'Agentic weekly report pipeline', tag: 'infra' },
     ],
-    inprogress: [],
-    waiting: [
+    research: [],
+    creation: [],
+    review: [
       { id: uid(), text: 'FRMP — Digital Service Manager role opening', tag: 'frmp', startedAt: now0 - 5*DAY },
     ],
     done: [
@@ -273,8 +281,9 @@ const DEFAULT_CARDS = {
       { id: uid(), text: 'ScalePoint Guardian landing page', tag: 'guardian' },
       { id: uid(), text: 'Contact Miami Valley Human Trafficking Task Force', tag: 'guardian' },
     ],
-    inprogress: [],
-    waiting: [],
+    research: [],
+    creation: [],
+    review: [],
     done: [
       { id: uid(), text: 'Guardian page mockup built', tag: 'guardian', startedAt: now0 - 12*DAY, finishedAt: now0 - 10*DAY },
     ],
@@ -323,6 +332,36 @@ async function applyTheme() {
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
+// --- Migration: the board used to have 4 columns (Backlog, In Progress,
+// Waiting On Someone, Done). Cards already saved under the old 'inprogress'
+// / 'waiting' keys are carried into the new workflow rather than dropped —
+// old In Progress work becomes Creation, old Waiting On Someone becomes
+// Out for Review. Everything else about the card (id, text, tag, starred,
+// startedAt/finishedAt, blocked) is preserved as-is.
+function migrateCards(cards) {
+  if (!cards) cards = {};
+  if (cards.inprogress) {
+    cards.creation = [...(cards.creation || []), ...cards.inprogress];
+    delete cards.inprogress;
+  }
+  if (cards.waiting) {
+    cards.review = [...(cards.review || []), ...cards.waiting];
+    delete cards.waiting;
+  }
+  COLS.forEach(c => { if (!cards[c.id]) cards[c.id] = []; });
+  return cards;
+}
+
+function parseCards(raw, boardId) {
+  let cards;
+  try {
+    cards = raw ? JSON.parse(raw.value) : (DEFAULT_CARDS[boardId] || {});
+  } catch(e) {
+    cards = DEFAULT_CARDS[boardId] || {};
+  }
+  return migrateCards(cards);
+}
+
 let meta = null;
 let currentCards = null;
 let dowOpen = false;
@@ -336,6 +375,18 @@ async function loadMeta() {
   }
   if (!meta.wipLimits) meta.wipLimits = {};
   if (!meta.sleOverride) meta.sleOverride = {};
+  // Migrate old 4-column WIP limits (inprogress/waiting) to the new
+  // 5-column workflow (research/creation/review).
+  Object.keys(meta.wipLimits).forEach(bid => {
+    const wl = meta.wipLimits[bid];
+    if (wl && (wl.inprogress != null || wl.waiting != null)) {
+      const migrated = {};
+      if (wl.research != null) migrated.research = wl.research;
+      if (wl.inprogress != null) migrated.creation = wl.inprogress;
+      if (wl.waiting != null) migrated.review = wl.waiting;
+      meta.wipLimits[bid] = migrated;
+    }
+  });
 }
 
 async function saveMeta() {
@@ -344,12 +395,8 @@ async function saveMeta() {
 }
 
 async function loadBoard(id) {
-  try {
-    const r = await store.get(BOARD_KEY(id));
-    currentCards = r ? JSON.parse(r.value) : (DEFAULT_CARDS[id] || { backlog: [], inprogress: [], waiting: [], done: [] });
-  } catch(e) {
-    currentCards = DEFAULT_CARDS[id] || { backlog: [], inprogress: [], waiting: [], done: [] };
-  }
+  const r = await store.get(BOARD_KEY(id));
+  currentCards = parseCards(r, id);
 }
 
 async function saveCurrentBoard() {
@@ -361,9 +408,9 @@ function setStatus(msg) { document.getElementById('statusBar').textContent = msg
 
 // --- Flow: transitioning a card between workflow states ---
 // Implements the Kanban Guide's "started"/"finished" points: a card is
-// started the instant it first enters a WIP state (In Progress or Waiting
-// On Someone) and finished the instant it enters Done. Moving a card back
-// to Backlog means it is not yet started again.
+// started the instant it first enters a WIP state (Research and Clarify,
+// Creation, or Out for Review) and finished the instant it enters Done.
+// Moving a card back to Backlog means it is not yet started again.
 function transitionCard(card, toColId) {
   const t = Date.now();
   if (toColId === 'backlog') {
@@ -502,9 +549,9 @@ function renderDow() {
     <div class="dow-title">Definition of Workflow — ${boardName}</div>
     <div class="dow-grid">
       <div><span class="dow-label">Work item</span>A task that moves ${boardName} forward — sales, ops, infra, admin, or product work.</div>
-      <div><span class="dow-label">Started</span>The moment a card is dragged into <b>In Progress</b> or <b>Waiting On Someone</b>.</div>
+      <div><span class="dow-label">Started</span>The moment a card is dragged into <b>Research and Clarify</b>, <b>Creation</b>, or <b>Out for Review</b>.</div>
       <div><span class="dow-label">Finished</span>The moment a card is dragged into <b>Done</b>.</div>
-      <div><span class="dow-label">States</span>Backlog → In Progress (WIP limit ${getWipLimit(meta.active, 'inprogress')}) → Waiting On Someone (WIP limit ${getWipLimit(meta.active, 'waiting')}) → Done.</div>
+      <div><span class="dow-label">States</span>Backlog → Research and Clarify (WIP limit ${getWipLimit(meta.active, 'research')}) → Creation (WIP limit ${getWipLimit(meta.active, 'creation')}) → Out for Review (WIP limit ${getWipLimit(meta.active, 'review')}) → Done.</div>
       <div><span class="dow-label">WIP control</span>Click a column's count to change its limit. A column over its limit turns red — that's the signal to stop starting new work and help finish what's in flight.</div>
       <div><span class="dow-label">Policies</span>
         <ul class="dow-policy-list">
@@ -650,13 +697,8 @@ async function moveCardToBoard(targetBoardId) {
   currentCards[dragFromCol] = currentCards[dragFromCol].filter(c => c.id !== dragCard.id);
   await saveCurrentBoard();
   // Load target board, add card to backlog (not started there yet), save
-  let targetCards;
-  try {
-    const r = await store.get(BOARD_KEY(targetBoardId));
-    targetCards = r ? JSON.parse(r.value) : (DEFAULT_CARDS[targetBoardId] || { backlog:[], inprogress:[], waiting:[], done:[] });
-  } catch(e) {
-    targetCards = { backlog:[], inprogress:[], waiting:[], done:[] };
-  }
+  const r = await store.get(BOARD_KEY(targetBoardId));
+  const targetCards = parseCards(r, targetBoardId);
   transitionCard(dragCard, 'backlog');
   targetCards.backlog = [dragCard, ...(targetCards.backlog || [])];
   await store.set(BOARD_KEY(targetBoardId), JSON.stringify(targetCards));
@@ -708,10 +750,8 @@ async function toggleStar(boardId, colId, cardId) {
   if (boardId === meta.active) {
     cards = currentCards;
   } else {
-    try {
-      const r = await store.get(BOARD_KEY(boardId));
-      cards = r ? JSON.parse(r.value) : (DEFAULT_CARDS[boardId] || {});
-    } catch(e) { cards = {}; }
+    const r = await store.get(BOARD_KEY(boardId));
+    cards = parseCards(r, boardId);
   }
   const col = cards[colId] || [];
   const card = col.find(c => c.id === cardId);
@@ -733,10 +773,8 @@ async function getAllStarred() {
     if (boardId === meta.active) {
       cards = currentCards;
     } else {
-      try {
-        const r = await store.get(BOARD_KEY(boardId));
-        cards = r ? JSON.parse(r.value) : (DEFAULT_CARDS[boardId] || {});
-      } catch(e) { cards = {}; }
+      const r = await store.get(BOARD_KEY(boardId));
+      cards = parseCards(r, boardId);
     }
     for (const col of COLS) {
       (cards[col.id] || []).filter(c => c.starred).forEach(c => {
