@@ -20,6 +20,7 @@
   .logo { font-size: 20.7px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
   .logo span { color: #c95540; }
   .subtitle { font-size: 12.65px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .theme-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
   .theme-label { font-size: 12.65px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
   .toggle-track { width: 36px; height: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; position: relative; transition: background 0.2s; }
@@ -50,9 +51,13 @@
   .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: start; }
   .column { background: var(--bg2); border-radius: 10px; padding: 12px; min-height: 200px; border: 2px solid var(--border); transition: border-color 0.15s, background 0.15s; }
   .column.drag-over { border-color: #4a90b8; background: var(--bg4); }
+  .column.wip-over { border-color: #c95540; }
   .col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .col-title { font-size: 12.65px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
   .col-count { background: var(--cnt); color: var(--muted); font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+  .col-count.editable-count { cursor: pointer; }
+  .col-count.editable-count:hover { opacity: 0.8; }
+  .col-count.over-limit { background: rgba(201,85,64,0.25); color: #e07560; }
   .backlog .col-title { color: var(--muted); }
   .inprogress .col-title { color: #4a90b8; }
   .waiting .col-title { color: #d4a030; }
@@ -60,8 +65,9 @@
   .card { background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 10px 8px; margin-bottom: 8px; cursor: grab; transition: transform 0.1s, border-color 0.15s; position: relative; }
   .card:hover { border-color: var(--border3); transform: translateY(-1px); }
   .card.dragging { opacity: 0.4; }
+  .card.blocked { border-left: 3px solid #c95540; }
   .card-text { font-size: 14.37px; line-height: 1.45; color: var(--text2); padding-right: 20px; }
-  .card-footer { display: flex; align-items: center; margin-top: 7px; }
+  .card-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
   .tag { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 20px; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; }
   .tag:hover { opacity: 0.75; }
   .tag-dropdown { position: absolute; bottom: 32px; left: 10px; background: var(--bg2); border: 1px solid #4a90b8; border-radius: 8px; padding: 4px; z-index: 100; display: flex; flex-direction: column; gap: 2px; min-width: 100px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
@@ -82,18 +88,41 @@
   .star-btn { position: absolute; top: 7px; right: 28px; background: none; border: none; cursor: pointer; font-size: 16.1px; line-height: 1; padding: 0 2px; color: var(--muted2); transition: color 0.15s; }
   .star-btn:hover { color: #d4a030; }
   .star-btn.starred { color: #d4a030; }
+  .block-btn { position: absolute; top: 7px; right: 49px; background: none; border: none; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; color: var(--muted2); opacity: 0.55; transition: opacity 0.15s, color 0.15s; }
+  .block-btn:hover { opacity: 1; }
+  .block-btn.blocked-on { color: #c95540; opacity: 1; }
   .priority-board { display: flex; flex-direction: column; gap: 8px; max-width: 700px; }
   .priority-empty { color: var(--muted2); font-size: 14.95px; padding: 40px 0; text-align: center; font-style: italic; }
   .priority-card { background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 12px 8px; position: relative; }
   .priority-card:hover { border-color: var(--border3); }
   .priority-card-text { font-size: 14.37px; line-height: 1.45; color: var(--text2); padding-right: 24px; }
-  .priority-card-footer { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
+  .priority-card-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 7px; }
   .source-badge { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 20px; background: var(--cnt); color: var(--muted); text-transform: uppercase; }
   .col-badge { font-size: 11.5px; color: var(--muted); font-style: italic; }
   .delete-btn { position: absolute; top: 7px; right: 7px; background: none; border: none; color: var(--muted2); cursor: pointer; font-size: 18.4px; line-height: 1; padding: 0 2px; transition: color 0.15s; }
   .delete-btn:hover { color: #c95540; }
   .empty-col { color: var(--muted2); font-size: 13.8px; text-align: center; padding: 20px 0; font-style: italic; }
   .status-bar { margin-top: 14px; font-size: 11.5px; color: var(--muted2); text-align: right; letter-spacing: 0.05em; }
+  .age-badge { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 20px; }
+  .age-badge.age-ok { background: rgba(79,168,118,0.15); color: #6dc896; }
+  .age-badge.age-warn { background: rgba(212,160,48,0.15); color: #e0b850; }
+  .age-badge.age-over { background: rgba(201,85,64,0.15); color: #e07560; }
+  .age-badge.age-neutral { background: var(--cnt); color: var(--muted); }
+  .blocked-pill { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 20px; background: rgba(201,85,64,0.15); color: #e07560; cursor: pointer; letter-spacing: 0.04em; }
+  .metrics-bar { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; padding: 9px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; }
+  .metric { display: flex; align-items: center; gap: 6px; font-size: 12.65px; }
+  .metric-label { color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+  .metric-value { font-weight: 700; color: var(--text); }
+  .metric-value.metric-over { color: #c95540; }
+  .sle-inline { cursor: pointer; border-bottom: 1px dashed var(--muted); }
+  .sle-source { font-weight: 400; color: var(--muted); font-size: 11px; }
+  .dow-panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 13.8px; line-height: 1.55; }
+  .dow-title { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12.65px; color: #4a90b8; margin-bottom: 10px; }
+  .dow-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .dow-label { font-weight: 700; color: var(--text2); margin-right: 6px; }
+  .dow-policy-list { margin: 4px 0 0 18px; padding: 0; }
+  .dow-policy-list li { margin-bottom: 2px; }
+  .dow-note { color: var(--muted); font-style: italic; }
   @media (max-width: 800px) { .board { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
@@ -104,9 +133,12 @@
     <div class="logo">Scale<span>Point</span> Systems</div>
     <div class="subtitle">Project Board</div>
   </div>
-  <div class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
-    <span class="theme-label" id="themeLabel">Dark</span>
-    <div class="toggle-track"><div class="toggle-thumb"></div></div>
+  <div class="header-right">
+    <button class="btn-sm" onclick="toggleDow()">Definition of Workflow</button>
+    <div class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+      <span class="theme-label" id="themeLabel">Dark</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    </div>
   </div>
 </div>
 
@@ -118,6 +150,8 @@
     <button class="btn-sm btn-danger" id="deleteBoardBtn" onclick="deleteCurrentBoard()">Delete Board</button>
   </div>
 </div>
+
+<div class="dow-panel" id="dowPanel" style="display:none"></div>
 
 <div class="tag-manager" id="tagManager"></div>
 
@@ -140,6 +174,8 @@
   <button class="btn-add" onclick="addCard()">+ Add</button>
 </div>
 
+<div class="metrics-bar" id="metricsBar"></div>
+
 <div class="board" id="board"></div>
 <div class="status-bar" id="statusBar">Loading...</div>
 
@@ -147,18 +183,35 @@
 const META_KEY  = 'scalepoint-kanban-meta';
 const BOARD_KEY = id => 'scalepoint-board-' + id;
 
+// --- Definition of Workflow: states, WIP-controlled states, and defaults ---
+// Per the Kanban Guide, a work item is "started" the moment it enters a WIP
+// state and "finished" the moment it enters the finished state. Backlog is
+// "not yet started"; Done is "finished". In Progress and Waiting On Someone
+// are the two states where work-in-progress (WIP) is actively controlled.
 const COLS = [
   { id: 'backlog',    label: 'Backlog'            },
   { id: 'inprogress', label: 'In Progress'        },
   { id: 'waiting',    label: 'Waiting On Someone' },
   { id: 'done',       label: 'Done'               },
 ];
+const WIP_COLS = ['inprogress', 'waiting'];
+const DEFAULT_WIP_LIMITS = { inprogress: 3, waiting: 4 };
+const DEFAULT_SLE_DAYS = 5;
+const DAY = 86400000;
+const now0 = Date.now();
 
 const DEFAULT_BOARDS = {
   order: ['general', 'ipm', 'frmp', 'guardian'],
   names: { general: 'General', ipm: 'IPM', frmp: 'FRMP', guardian: 'Guardian' },
   active: 'general',
   tags: ['ipm','frmp','sales','infra','admin','guardian'],
+  wipLimits: {
+    general:  { inprogress: 3, waiting: 4 },
+    ipm:      { inprogress: 3, waiting: 3 },
+    frmp:     { inprogress: 3, waiting: 4 },
+    guardian: { inprogress: 2, waiting: 3 },
+  },
+  sleOverride: {},
 };
 
 const DEFAULT_CARDS = {
@@ -172,13 +225,13 @@ const DEFAULT_CARDS = {
     ],
     inprogress: [],
     waiting: [
-      { id: uid(), text: 'ClearWater Sensors — Rod and Reel RFQ', tag: 'sales' },
-      { id: uid(), text: 'Carillon Historical Park — callback', tag: 'sales' },
+      { id: uid(), text: 'ClearWater Sensors — Rod and Reel RFQ', tag: 'sales', startedAt: now0 - 6*DAY },
+      { id: uid(), text: 'Carillon Historical Park — callback', tag: 'sales', startedAt: now0 - 3*DAY },
     ],
     done: [
-      { id: uid(), text: 'ScalePoint Systems LLC registered + EIN obtained', tag: 'admin' },
-      { id: uid(), text: 'scalepointsystems.com launched', tag: 'admin' },
-      { id: uid(), text: 'miamivalleyair.com launched', tag: 'admin' },
+      { id: uid(), text: 'ScalePoint Systems LLC registered + EIN obtained', tag: 'admin', startedAt: now0 - 40*DAY, finishedAt: now0 - 35*DAY },
+      { id: uid(), text: 'scalepointsystems.com launched', tag: 'admin', startedAt: now0 - 30*DAY, finishedAt: now0 - 28*DAY },
+      { id: uid(), text: 'miamivalleyair.com launched', tag: 'admin', startedAt: now0 - 20*DAY, finishedAt: now0 - 18*DAY },
     ],
   },
   ipm: {
@@ -186,15 +239,15 @@ const DEFAULT_CARDS = {
       { id: uid(), text: 'Write MQTT firmware for IPM nodes', tag: 'ipm' },
     ],
     inprogress: [
-      { id: uid(), text: 'Build 4 IPM sensor nodes', tag: 'ipm' },
-      { id: uid(), text: 'Finalize and send contract to Jon + Alice', tag: 'ipm' },
+      { id: uid(), text: 'Build 4 IPM sensor nodes', tag: 'ipm', startedAt: now0 - 4*DAY },
+      { id: uid(), text: 'Finalize and send contract to Jon + Alice', tag: 'ipm', startedAt: now0 - 2*DAY },
     ],
     waiting: [
-      { id: uid(), text: 'Jon — backup battery add-on decision', tag: 'ipm' },
+      { id: uid(), text: 'Jon — backup battery add-on decision', tag: 'ipm', startedAt: now0 - 7*DAY },
     ],
     done: [
-      { id: uid(), text: 'IPM proposal delivered', tag: 'ipm' },
-      { id: uid(), text: 'Meeting with Jon and Alice — scope finalized', tag: 'ipm' },
+      { id: uid(), text: 'IPM proposal delivered', tag: 'ipm', startedAt: now0 - 21*DAY, finishedAt: now0 - 16*DAY },
+      { id: uid(), text: 'Meeting with Jon and Alice — scope finalized', tag: 'ipm', startedAt: now0 - 15*DAY, finishedAt: now0 - 14*DAY },
     ],
   },
   frmp: {
@@ -208,11 +261,11 @@ const DEFAULT_CARDS = {
     ],
     inprogress: [],
     waiting: [
-      { id: uid(), text: 'FRMP — Digital Service Manager role opening', tag: 'frmp' },
+      { id: uid(), text: 'FRMP — Digital Service Manager role opening', tag: 'frmp', startedAt: now0 - 5*DAY },
     ],
     done: [
-      { id: uid(), text: 'Riverscape live node deployed', tag: 'frmp' },
-      { id: uid(), text: 'miamivalleyair.com launched', tag: 'frmp' },
+      { id: uid(), text: 'Riverscape live node deployed', tag: 'frmp', startedAt: now0 - 25*DAY, finishedAt: now0 - 22*DAY },
+      { id: uid(), text: 'miamivalleyair.com launched', tag: 'frmp', startedAt: now0 - 20*DAY, finishedAt: now0 - 18*DAY },
     ],
   },
   guardian: {
@@ -223,7 +276,7 @@ const DEFAULT_CARDS = {
     inprogress: [],
     waiting: [],
     done: [
-      { id: uid(), text: 'Guardian page mockup built', tag: 'guardian' },
+      { id: uid(), text: 'Guardian page mockup built', tag: 'guardian', startedAt: now0 - 12*DAY, finishedAt: now0 - 10*DAY },
     ],
   },
 };
@@ -232,7 +285,7 @@ const DEFAULT_CARDS = {
 const store = {
   async get(key) {
     if (window.storage) {
-      try { return await store.get(key); } catch(e) { return null; }
+      try { return await window.storage.get(key); } catch(e) { return null; }
     } else {
       const val = localStorage.getItem(key);
       return val ? { value: val } : null;
@@ -240,14 +293,14 @@ const store = {
   },
   async set(key, value) {
     if (window.storage) {
-      try { return await store.set(key, value); } catch(e) { return null; }
+      try { return await window.storage.set(key, value); } catch(e) { return null; }
     } else {
       localStorage.setItem(key, value); return true;
     }
   },
   async delete(key) {
     if (window.storage) {
-      try { return await store.delete(key); } catch(e) { return null; }
+      try { return await window.storage.delete(key); } catch(e) { return null; }
     } else {
       localStorage.removeItem(key); return true;
     }
@@ -272,6 +325,7 @@ function uid() { return Math.random().toString(36).slice(2, 10); }
 
 let meta = null;
 let currentCards = null;
+let dowOpen = false;
 
 async function loadMeta() {
   try {
@@ -280,10 +334,13 @@ async function loadMeta() {
   } catch(e) {
     meta = { ...DEFAULT_BOARDS };
   }
+  if (!meta.wipLimits) meta.wipLimits = {};
+  if (!meta.sleOverride) meta.sleOverride = {};
 }
 
 async function saveMeta() {
-  try { await store.set(META_KEY, JSON.stringify(meta)); } catch(e) {}
+  const result = await store.set(META_KEY, JSON.stringify(meta));
+  if (!result) setStatus('Save failed — changes may not persist');
 }
 
 async function loadBoard(id) {
@@ -296,13 +353,172 @@ async function loadBoard(id) {
 }
 
 async function saveCurrentBoard() {
-  try {
-    await store.set(BOARD_KEY(meta.active), JSON.stringify(currentCards));
-    setStatus('Saved ' + new Date().toLocaleTimeString());
-  } catch(e) { setStatus('Save failed'); }
+  const result = await store.set(BOARD_KEY(meta.active), JSON.stringify(currentCards));
+  setStatus(result ? 'Saved ' + new Date().toLocaleTimeString() : 'Save failed — changes may not persist');
 }
 
 function setStatus(msg) { document.getElementById('statusBar').textContent = msg; }
+
+// --- Flow: transitioning a card between workflow states ---
+// Implements the Kanban Guide's "started"/"finished" points: a card is
+// started the instant it first enters a WIP state (In Progress or Waiting
+// On Someone) and finished the instant it enters Done. Moving a card back
+// to Backlog means it is not yet started again.
+function transitionCard(card, toColId) {
+  const t = Date.now();
+  if (toColId === 'backlog') {
+    card.startedAt = null;
+    card.finishedAt = null;
+  } else if (WIP_COLS.includes(toColId)) {
+    if (!card.startedAt) card.startedAt = t;
+    card.finishedAt = null;
+  } else if (toColId === 'done') {
+    if (!card.startedAt) card.startedAt = t;
+    card.finishedAt = t;
+  }
+}
+
+function ageDays(card) {
+  if (!card.startedAt) return null;
+  return Math.max(0, Math.floor((Date.now() - card.startedAt) / DAY));
+}
+
+// --- WIP limits ---
+function getWipLimit(boardId, colId) {
+  const custom = meta.wipLimits && meta.wipLimits[boardId] && meta.wipLimits[boardId][colId];
+  return custom != null ? custom : DEFAULT_WIP_LIMITS[colId];
+}
+
+function startEditWip(el, colId) {
+  const current = getWipLimit(meta.active, colId);
+  const input = document.createElement('input');
+  input.type = 'number'; input.min = '1'; input.value = current;
+  input.style.cssText = 'width:40px;background:var(--bg4);border:1px solid #4a90b8;color:var(--text);padding:1px 4px;border-radius:4px;font-size:11.5px;outline:none;';
+  el.replaceWith(input); input.focus(); input.select();
+  const save = () => {
+    const val = Math.max(1, parseInt(input.value, 10) || current);
+    if (!meta.wipLimits[meta.active]) meta.wipLimits[meta.active] = {};
+    meta.wipLimits[meta.active][colId] = val;
+    saveMeta();
+    render();
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { input.value = current; input.blur(); } });
+}
+
+// --- Service Level Expectation ---
+// Per the guide: "based on historical cycle time... if historical cycle
+// time data does not exist, a best guess will do." We compute the 85th
+// percentile of recent cycle times once there's enough data (5+ finished
+// items with both a start and finish point); otherwise we fall back to a
+// manual override or a default guess, either of which is editable inline.
+function getSLE(boardId) {
+  const override = meta.sleOverride && meta.sleOverride[boardId];
+  const cards = (boardId === meta.active) ? currentCards : null;
+  const cycles = [];
+  if (cards) {
+    (cards.done || []).forEach(c => {
+      if (c.startedAt && c.finishedAt) cycles.push((c.finishedAt - c.startedAt) / DAY);
+    });
+  }
+  if (cycles.length >= 5) {
+    cycles.sort((a, b) => a - b);
+    const idx = Math.min(cycles.length - 1, Math.ceil(0.85 * cycles.length) - 1);
+    return { days: Math.max(1, Math.round(cycles[idx])), source: 'calculated', sampleSize: cycles.length, overridden: !!override };
+  }
+  if (override) return { days: override, source: 'manual', sampleSize: cycles.length };
+  return { days: DEFAULT_SLE_DAYS, source: 'guess', sampleSize: cycles.length };
+}
+
+function startEditSLE(elId) {
+  const valEl = document.getElementById(elId);
+  if (!valEl) return;
+  const current = getSLE(meta.active).days;
+  const input = document.createElement('input');
+  input.type = 'number'; input.min = '1'; input.value = current;
+  input.style.cssText = 'width:46px;background:var(--bg4);border:1px solid #4a90b8;color:var(--text);padding:1px 4px;border-radius:4px;font-size:12.65px;outline:none;';
+  valEl.replaceWith(input); input.focus(); input.select();
+  const save = () => {
+    const num = Math.max(1, parseInt(input.value, 10) || current);
+    meta.sleOverride[meta.active] = num;
+    saveMeta();
+    renderMetrics();
+    if (dowOpen) renderDow();
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { input.blur(); } });
+}
+
+// --- Flow Metrics: WIP, Throughput, Work Item Age (via card badges), Cycle Time ---
+function computeMetrics() {
+  const cards = currentCards;
+  const wip = WIP_COLS.reduce((sum, c) => sum + (cards[c] || []).length, 0);
+  const wipLimitTotal = WIP_COLS.reduce((sum, c) => sum + getWipLimit(meta.active, c), 0);
+  const doneCards = cards.done || [];
+  const t = Date.now();
+  const t7 = doneCards.filter(c => c.finishedAt && (t - c.finishedAt) <= 7 * DAY).length;
+  const t30 = doneCards.filter(c => c.finishedAt && (t - c.finishedAt) <= 30 * DAY).length;
+  const cyclesAll = doneCards.filter(c => c.startedAt && c.finishedAt).map(c => (c.finishedAt - c.startedAt) / DAY);
+  const avgCycle = cyclesAll.length ? (cyclesAll.reduce((a, b) => a + b, 0) / cyclesAll.length) : null;
+  const sle = getSLE(meta.active);
+  return { wip, wipLimitTotal, t7, t30, avgCycle, sle };
+}
+
+function renderMetrics() {
+  const bar = document.getElementById('metricsBar');
+  if (!bar) return;
+  if (meta.active === '__priority__') { bar.style.display = 'none'; return; }
+  bar.style.display = '';
+  const m = computeMetrics();
+  bar.innerHTML = `
+    <div class="metric"><span class="metric-label">WIP</span><span class="metric-value ${m.wip > m.wipLimitTotal ? 'metric-over' : ''}">${m.wip} / ${m.wipLimitTotal}</span></div>
+    <div class="metric"><span class="metric-label">Throughput 7d</span><span class="metric-value">${m.t7}</span></div>
+    <div class="metric"><span class="metric-label">Throughput 30d</span><span class="metric-value">${m.t30}</span></div>
+    <div class="metric"><span class="metric-label">Avg Cycle Time</span><span class="metric-value">${m.avgCycle != null ? m.avgCycle.toFixed(1) + 'd' : '—'}</span></div>
+    <div class="metric"><span class="metric-label">SLE (85%)</span><span class="metric-value sle-inline" id="sleValueDisplayBar" title="Click to set manually">${m.sle.days}d</span><span class="sle-source">${m.sle.source === 'calculated' ? '(from ' + m.sle.sampleSize + ')' : '(guess)'}</span></div>
+  `;
+  const sleEl = document.getElementById('sleValueDisplayBar');
+  if (sleEl) sleEl.addEventListener('click', () => startEditSLE('sleValueDisplayBar'));
+}
+
+// --- Definition of Workflow panel ---
+function toggleDow() {
+  dowOpen = !dowOpen;
+  const panel = document.getElementById('dowPanel');
+  panel.style.display = dowOpen ? '' : 'none';
+  if (dowOpen) renderDow();
+}
+
+function renderDow() {
+  const panel = document.getElementById('dowPanel');
+  if (!panel) return;
+  if (meta.active === '__priority__') {
+    panel.innerHTML = '<div class="dow-note">The Definition of Workflow is per board — switch to a board tab to view its DoW.</div>';
+    return;
+  }
+  const boardName = meta.names[meta.active];
+  const m = computeMetrics();
+  panel.innerHTML = `
+    <div class="dow-title">Definition of Workflow — ${boardName}</div>
+    <div class="dow-grid">
+      <div><span class="dow-label">Work item</span>A task that moves ${boardName} forward — sales, ops, infra, admin, or product work.</div>
+      <div><span class="dow-label">Started</span>The moment a card is dragged into <b>In Progress</b> or <b>Waiting On Someone</b>.</div>
+      <div><span class="dow-label">Finished</span>The moment a card is dragged into <b>Done</b>.</div>
+      <div><span class="dow-label">States</span>Backlog → In Progress (WIP limit ${getWipLimit(meta.active, 'inprogress')}) → Waiting On Someone (WIP limit ${getWipLimit(meta.active, 'waiting')}) → Done.</div>
+      <div><span class="dow-label">WIP control</span>Click a column's count to change its limit. A column over its limit turns red — that's the signal to stop starting new work and help finish what's in flight.</div>
+      <div><span class="dow-label">Policies</span>
+        <ul class="dow-policy-list">
+          <li>Pull new work only when a WIP-controlled column is below its limit.</li>
+          <li>Flag blocked cards immediately (⛔) and clear blockers before pulling new work.</li>
+          <li>A card aging past the SLE gets reviewed before anything new is started.</li>
+        </ul>
+      </div>
+      <div><span class="dow-label">Service Level Expectation</span>~85% of cards finish within <span class="sle-inline" id="sleValueDisplayDow" title="Click to set manually">${m.sle.days}</span> day${m.sle.days === 1 ? '' : 's'} ${m.sle.source === 'calculated' ? '(calculated from the last ' + m.sle.sampleSize + ' finished items)' : '(best guess — this will calculate itself once you have enough finished items)'}.</div>
+    </div>
+  `;
+  const sleEl = document.getElementById('sleValueDisplayDow');
+  if (sleEl) sleEl.addEventListener('click', () => startEditSLE('sleValueDisplayDow'));
+}
 
 async function switchBoard(id) {
   meta.active = id;
@@ -320,6 +536,7 @@ async function createBoard() {
   const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + uid().slice(0,4);
   meta.order.push(id);
   meta.names[id] = name;
+  meta.wipLimits[id] = { ...DEFAULT_WIP_LIMITS };
   document.getElementById('newBoardName').value = '';
   await saveMeta();
   await switchBoard(id);
@@ -356,6 +573,8 @@ async function deleteCurrentBoard() {
   try { await store.delete(BOARD_KEY(meta.active)); } catch(e) {}
   meta.order = meta.order.filter(id => id !== meta.active);
   delete meta.names[meta.active];
+  delete meta.wipLimits[meta.active];
+  delete meta.sleOverride[meta.active];
   meta.active = meta.order[0];
   await saveMeta();
   await loadBoard(meta.active);
@@ -430,7 +649,7 @@ async function moveCardToBoard(targetBoardId) {
   // Remove from current board
   currentCards[dragFromCol] = currentCards[dragFromCol].filter(c => c.id !== dragCard.id);
   await saveCurrentBoard();
-  // Load target board, add card to backlog, save
+  // Load target board, add card to backlog (not started there yet), save
   let targetCards;
   try {
     const r = await store.get(BOARD_KEY(targetBoardId));
@@ -438,6 +657,7 @@ async function moveCardToBoard(targetBoardId) {
   } catch(e) {
     targetCards = { backlog:[], inprogress:[], waiting:[], done:[] };
   }
+  transitionCard(dragCard, 'backlog');
   targetCards.backlog = [dragCard, ...(targetCards.backlog || [])];
   await store.set(BOARD_KEY(targetBoardId), JSON.stringify(targetCards));
   const name = meta.names[targetBoardId];
@@ -542,6 +762,7 @@ async function renderPriority() {
   container.className = 'priority-board';
 
   starred.forEach(({ card, boardId, boardName, colLabel }) => {
+    const age = ageDays(card);
     const cardEl = document.createElement('div');
     cardEl.className = 'priority-card';
     cardEl.innerHTML = `
@@ -551,6 +772,8 @@ async function renderPriority() {
         <span class="tag" style="${getTagStyle(card.tag)}">${card.tag}</span>
         <span class="source-badge">${boardName}</span>
         <span class="col-badge">${colLabel}</span>
+        ${age != null ? `<span class="age-badge age-neutral" title="Days since started">${age}d</span>` : ''}
+        ${card.blocked ? `<span class="blocked-pill" title="${card.blockedReason || 'Blocked'}">⛔ BLOCKED</span>` : ''}
       </div>
     `;
     container.appendChild(cardEl);
@@ -566,8 +789,12 @@ function render() {
   boardEl.innerHTML = '';
   COLS.forEach(col => {
     const cards = currentCards[col.id] || [];
+    const isWipCol = WIP_COLS.includes(col.id);
+    const limit = isWipCol ? getWipLimit(meta.active, col.id) : null;
+    const overLimit = limit !== null && cards.length > limit;
+
     const colEl = document.createElement('div');
-    colEl.className = 'column ' + col.id;
+    colEl.className = 'column ' + col.id + (overLimit ? ' wip-over' : '');
     colEl.dataset.col = col.id;
 
     colEl.addEventListener('dragover', e => {
@@ -583,6 +810,7 @@ function render() {
       e.preventDefault();
       colEl.classList.remove('drag-over'); clearIndicators();
       if (!dragCard) return;
+      if (dragFromCol !== col.id) transitionCard(dragCard, col.id);
       currentCards[dragFromCol] = currentCards[dragFromCol].filter(c => c.id !== dragCard.id);
       const target = currentCards[col.id] || [];
       if (dragOverCardId) {
@@ -596,8 +824,12 @@ function render() {
 
     const header = document.createElement('div');
     header.className = 'col-header';
-    header.innerHTML = `<span class="col-title">${col.label}</span><span class="col-count">${cards.length}</span>`;
+    const countLabel = limit !== null ? `${cards.length} / ${limit}` : `${cards.length}`;
+    header.innerHTML = `<span class="col-title">${col.label}</span><span class="col-count ${limit !== null ? 'editable-count' : ''} ${overLimit ? 'over-limit' : ''}" ${limit !== null ? 'title="Click to set WIP limit"' : ''}>${countLabel}</span>`;
     colEl.appendChild(header);
+    if (limit !== null) {
+      header.querySelector('.col-count').addEventListener('click', e => startEditWip(e.currentTarget, col.id));
+    }
 
     if (cards.length === 0) {
       const empty = document.createElement('div');
@@ -605,16 +837,50 @@ function render() {
       colEl.appendChild(empty);
     } else {
       cards.forEach(card => {
+        const age = isWipCol ? ageDays(card) : null;
+        const sleDays = getSLE(meta.active).days;
+        let ageCls = 'age-ok';
+        if (age != null) {
+          if (age > sleDays) ageCls = 'age-over';
+          else if (age >= sleDays * 0.7) ageCls = 'age-warn';
+        }
+
         const cardEl = document.createElement('div');
-        cardEl.className = 'card'; cardEl.draggable = true; cardEl.dataset.id = card.id;
+        cardEl.className = 'card' + (card.blocked ? ' blocked' : ''); cardEl.draggable = true; cardEl.dataset.id = card.id;
         cardEl.innerHTML = `
           <button class="star-btn ${card.starred ? 'starred' : ''}" title="${card.starred ? 'Remove from priority' : 'Add to priority'}">${card.starred ? '★' : '☆'}</button>
+          <button class="block-btn ${card.blocked ? 'blocked-on' : ''}" title="${card.blocked ? 'Unblock' : 'Mark blocked'}">⛔</button>
           <button class="delete-btn" title="Delete">×</button>
-          <div class="card-text" title="Double-click to edit" style="padding-right:44px">${card.text}</div>
-          <div class="card-footer"><span class="tag" style="${getTagStyle(card.tag)}">${card.tag}</span></div>
+          <div class="card-text" title="Double-click to edit" style="padding-right:66px">${card.text}</div>
+          <div class="card-footer">
+            <span class="tag" style="${getTagStyle(card.tag)}">${card.tag}</span>
+            ${age != null ? `<span class="age-badge ${ageCls}" title="Started ${new Date(card.startedAt).toLocaleDateString()} — SLE ${sleDays}d">${age}d</span>` : ''}
+            ${card.blocked ? `<span class="blocked-pill" title="Double-click to edit reason">⛔ ${card.blockedReason ? card.blockedReason : 'BLOCKED'}</span>` : ''}
+          </div>
         `;
 
         cardEl.querySelector('.star-btn').addEventListener('click', () => toggleStar(meta.active, col.id, card.id));
+
+        cardEl.querySelector('.block-btn').addEventListener('click', () => {
+          card.blocked = !card.blocked;
+          if (!card.blocked) card.blockedReason = '';
+          render(); saveCurrentBoard();
+          setStatus(card.blocked ? '⛔ Marked blocked' : 'Unblocked');
+        });
+
+        const blockedPill = cardEl.querySelector('.blocked-pill');
+        if (blockedPill) {
+          blockedPill.addEventListener('dblclick', e => {
+            e.stopPropagation();
+            const input = document.createElement('input');
+            input.type = 'text'; input.value = card.blockedReason || ''; input.placeholder = 'Why blocked?'; input.maxLength = 60;
+            input.style.cssText = 'font-size:11px;background:var(--bg4);border:1px solid #4a90b8;color:var(--text);padding:2px 6px;border-radius:10px;outline:none;width:140px;';
+            blockedPill.replaceWith(input); input.focus(); input.select();
+            const save = () => { card.blockedReason = input.value.trim(); render(); saveCurrentBoard(); };
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } if (ev.key === 'Escape') { input.blur(); } });
+          });
+        }
 
         cardEl.querySelector('.card-text').addEventListener('dblclick', function() {
           const input = document.createElement('input');
@@ -623,7 +889,7 @@ function render() {
           this.replaceWith(input); input.focus(); input.select();
           const save = () => {
             const val = input.value.trim(); if (val) card.text = val;
-            const d = document.createElement('div'); d.className = 'card-text'; d.title = 'Double-click to edit'; d.style.paddingRight = '44px'; d.textContent = card.text;
+            const d = document.createElement('div'); d.className = 'card-text'; d.title = 'Double-click to edit'; d.style.paddingRight = '66px'; d.textContent = card.text;
             input.replaceWith(d); d.addEventListener('dblclick', arguments.callee); saveCurrentBoard();
           };
           input.addEventListener('blur', save);
@@ -648,6 +914,7 @@ function render() {
           e.preventDefault(); e.stopPropagation();
           colEl.classList.remove('drag-over'); clearIndicators();
           if (!dragCard || dragCard.id === card.id) return;
+          if (dragFromCol !== col.id) transitionCard(dragCard, col.id);
           currentCards[dragFromCol] = currentCards[dragFromCol].filter(c => c.id !== dragCard.id);
           const target = currentCards[col.id] || [];
           const idx = target.findIndex(c => c.id === card.id);
@@ -692,6 +959,9 @@ function render() {
     }
     boardEl.appendChild(colEl);
   });
+
+  renderMetrics();
+  if (dowOpen) renderDow();
 }
 
 function addCard() {
@@ -699,7 +969,9 @@ function addCard() {
   const tag  = document.getElementById('newCardTag').value;
   const col  = document.getElementById('newCardCol').value;
   if (!text) return;
-  currentCards[col] = [{ id: uid(), text, tag }, ...(currentCards[col] || [])];
+  const card = { id: uid(), text, tag };
+  transitionCard(card, col);
+  currentCards[col] = [card, ...(currentCards[col] || [])];
   document.getElementById('newCardText').value = '';
   render(); saveCurrentBoard();
 }
@@ -711,6 +983,8 @@ async function init() {
   await applyTheme();
   await loadMeta();
   if (!meta.tags) meta.tags = ['ipm','frmp','sales','infra','admin','guardian'];
+  if (!meta.wipLimits) meta.wipLimits = {};
+  if (!meta.sleOverride) meta.sleOverride = {};
   if (meta.active !== '__priority__') await loadBoard(meta.active);
   renderTabs();
   renderTagManager();
